@@ -1,12 +1,8 @@
 import uuid
-from typing import List
 
-from _orjson import Orjson
-
-from models.movie import Movie
+from models._orjson import Orjson
 
 
 class Role(Orjson):
     id: uuid.UUID
-    name: str
-    movie: List[Movie]
+    full_name: str
