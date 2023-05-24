@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from api.v1 import films
+from api.v1 import movies, genres, persons
 from core import config
 from core.logger import LOGGING
 from db import elastic, redis
@@ -38,18 +38,9 @@ async def shutdown():
     await elastic.es.close()
 
 
-# @app.get("/api/v1/search/",
-#          response_model=List[ShortFilm],
-#          summary="Поиск кинопроизведений",
-#          description="Полнотекстовый поиск по кинопроизведениям",
-#          response_description="Название и рейтинг фильма",
-#          tags=['Полнотекстовый поиск']
-#          )
-# async def film_search():
-#     pass
-
-
-app.include_router(films.router, prefix='/api/v1/films', tags=['films'])
+app.include_router(movies.router, prefix='/api/v1/films', tags=['Фильмы'])
+app.include_router(genres.router, prefix='/api/v1/genres', tags=['Жанры'])
+app.include_router(persons.router, prefix='/api/v1/persons', tags=['Персоны'])
 
 if __name__ == '__main__':
     uvicorn.run(

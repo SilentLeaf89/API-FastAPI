@@ -18,13 +18,13 @@ class MovieService:
         self.elastic = elastic
 
     async def get_by_id(self, movie_id: str) -> Optional[Movie]:
-        film = await self._movie_from_cache(movie_id)
-        if not film:
-            film = await self._get_movie_from_elastic(movie_id)
-            if not film:
+        movie = await self._movie_from_cache(movie_id)
+        if not movie:
+            movie = await self._get_movie_from_elastic(movie_id)
+            if not movie:
                 return None
-            await self._put_movie_to_cache(film)
-        return film
+            await self._put_movie_to_cache(movie)
+        return movie
 
     async def _get_movie_from_elastic(self, movie_id: str) -> Optional[Movie]:
         try:

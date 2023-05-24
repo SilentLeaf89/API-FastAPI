@@ -1,12 +1,12 @@
-import datetime
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 import uuid
 
 from pydantic import Field
 
-from _orjson import Orjson
-from role import Role
+from models._orjson import Orjson
+from models.role import Role
 
 
 class Movie(Orjson):
@@ -28,4 +28,25 @@ class Movie(Orjson):
             uuid.UUID: lambda u: str(u),
             datetime: lambda v: v.timestamp(),
             Role: lambda s: str(s),
+        }
+
+
+class ShortMovie(Orjson):
+    id: uuid.UUID
+    imdb_rating: float | None
+    title: str
+
+    class Config:
+        json_encoders = {
+            uuid.UUID: lambda u: str(u),
+        }
+
+
+class RoleMovie(Orjson):
+    id: uuid.UUID
+    roles: List[str]
+
+    class Config:
+        json_encoders = {
+            uuid.UUID: lambda u: str(u),
         }
