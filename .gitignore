@@ -22,3 +22,4 @@ venv.bak/
 
 # temp files
 test.ipynb
+dump.sh

@@ -1,0 +1,15 @@
+*.md
+README.md
+.git
+.gitignore
+.cache
+*.vscode
+*.env
+__pycache__
+Dockerfile
+docker-compose.yml
+dump.sh
+schema.png
+test.ipynb
+.dockerignore
+/tasks

@@ -1,0 +1,56 @@
+version: '3'
+services:
+  fastapi:
+    build:
+      context: .
+    container_name: fastapi_app
+    environment:
+      ELASTIC_HOST: http://elastic
+      ELASTIC_PORT: 9200
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - sprint_4_net
+    depends_on:
+      elastic:
+        condition: service_healthy
+    restart: unless-stopped
+
+  elastic:
+    image: elasticsearch:8.6.2
+    container_name: elasticsearch-8.6.2
+    environment:
+      - "discovery.type=single-node"
+      - xpack.security.enabled=false
+    networks:
+      - sprint_4_net
+    expose:
+      - 9200
+    restart: unless-stopped
+    healthcheck:
+      test: curl -u elastic:elastic -s -f elastic:9200/_cat/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 50
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis-7.0
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    restart: always
+    expose:
+      - 6379
+    command: redis-server --appendonly yes
+    volumes: 
+      - redis_data:/data
+    networks:
+      - sprint_4_net
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  sprint_4_net:
+    name: sprint_4_net
