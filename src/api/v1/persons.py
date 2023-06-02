@@ -85,6 +85,9 @@ async def persons_search(
     # find_persons - List[id]
     find_persons = await person_service.get_find_persons(query)
 
+    if not find_persons:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Person not found')
     response_persons = []
     for id in find_persons:
         response_persons.append(await person_service.get_by_id(id))

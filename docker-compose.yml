@@ -47,6 +47,18 @@ services:
     networks:
       - sprint_4_net
 
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.6.2
+    container_name: kibana-8.6.2
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elastic:9200
+    networks:
+      - sprint_4_net
+    depends_on:
+      - elastic
+    ports:
+      - "5601:5601"
+
 volumes:
   redis_data:
     driver: local

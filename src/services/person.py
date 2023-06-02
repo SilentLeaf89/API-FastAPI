@@ -57,7 +57,7 @@ class PersonService:
             person_id: str
             ) -> Optional[List[MovieRoles]]:
         try:
-            roles = ['actors', 'directors', 'writers']
+            roles = ["actors", "directors", "writers"]
             response = {}
             bodies = {}
             for role in roles:
