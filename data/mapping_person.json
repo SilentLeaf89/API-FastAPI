@@ -1,1 +1,1 @@
-{"person":{"mappings":{"properties":{"full_name":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":256}}},"id":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":256}}}}}}}
+{"person":{"mappings":{"dynamic":"strict","properties":{"full_name":{"type":"text","fields":{"raw":{"type":"keyword"}},"analyzer":"ru_en"},"id":{"type":"keyword"}}}}}
