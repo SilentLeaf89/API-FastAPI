@@ -13,3 +13,4 @@ schema.png
 test.ipynb
 .dockerignore
 /tasks
+/env
