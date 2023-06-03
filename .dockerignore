@@ -14,3 +14,4 @@ test.ipynb
 .dockerignore
 /tasks
 /env
+/nginx
