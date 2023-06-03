@@ -15,9 +15,10 @@ from services.query_to_es.search_movie import search_movie_query
 from services.query_to_es.sorted_movie import sorted_movie_query
 from services.query_to_es.genre_sorted_movie import genre_sorted_movie_query
 from core.get_logger import get_logger
+from schemas.movie_short import MovieShort
 
 
-MOVIE_CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
+MOVIE_CACHE_EXPIRE_IN_SECONDS = 5 * 60  # 5 минут
 FIND_MOVIES_CACHE_EXPIRE_IN_SECONDS = 20  # 20 секунд
 SORTED_MOVIES_CACHE_EXPIRE_IN_SECONDS = 60 * 60  # 1 час
 logger = get_logger()
@@ -73,66 +74,100 @@ class MovieService:
     # /movie/search
     async def get_find_movies(
             self,
-            query: str
-            ) -> Optional[List[Movie]]:
-        find_id = await self._ids_from_cache(query)
-        if not find_id:
-            find_id = await self._get_find_movies_from_elastic(query)
-            if not find_id:
+            query: str,
+            page_number,
+            page_size
+            ) -> Optional[List[MovieShort]]:
+        find_movies = await self._find_movies_from_cache(
+            key=f'{query}_{page_number}_{page_size}'
+            )
+        if not find_movies:
+            find_movies = await self._get_find_movies_from_elastic(
+                query,
+                page_number,
+                page_size
+                )
+            if not find_movies:
                 return None
-            await self._put_ids_to_cache(query, find_id)
-        return find_id
+            await self._put_find_movies_to_cache(
+                key=f'{query}_{page_number}_{page_size}',
+                find_movies=find_movies
+                )
+        return find_movies
 
     async def _get_find_movies_from_elastic(
             self,
-            query: str
+            query: str,
+            page_number: int,
+            page_size: int
             ) -> Optional[List[str]]:
         try:
-            find_id = []
+            find_movies = []
 
-            body = search_movie_query(query)
+            body = search_movie_query(query, page_number, page_size)
             response = await self.elastic.search(
                 body=body,
                 index='movies',
-                size=100
+                size=page_size
                 )
             logger.info(
                 'Movies list on demand {0} request from ES'.format(query)
             )
             docs = response['hits']['hits']
-            find_id = []
+            find_movies = []
             for doc in docs:
-                find_id.append(doc['_id'])
+                find_movies.append(MovieShort(
+                    uuid=doc['_source']['id'],
+                    imdb_rating=doc['_source']['imdb_rating'],
+                    title=doc['_source']['title']
+                    )
+                )
 
         except NotFoundError:
             return None
-        return find_id
+        return find_movies
 
     # главная
     async def get_sorted_movies(
             self,
             order: str,
-            sorted_field: str
-            ) -> Optional[List[Movie]]:
-        sorted_id = await self._ids_from_cache('index_sorted')
-        if not sorted_id:
-            sorted_id = await self._get_sorted_movies_from_elastic(
+            sorted_field: str,
+            page_number: int,
+            page_size: int,
+            ) -> Optional[List[MovieShort]]:
+        sorted_movies = await self._find_movies_from_cache(
+            key=f'index_page_{page_number}_{page_size}'
+            )
+        if not sorted_movies:
+            sorted_movies = await self._get_sorted_movies_from_elastic(
                 order,
-                sorted_field
+                sorted_field,
+                page_number,
+                page_size
                 )
-            if not sorted_id:
+            if not sorted_movies:
                 return None
-            await self._put_ids_to_cache('index_sorted', sorted_id)
-        return sorted_id
+            await self._put_find_movies_to_cache(
+                key=f'index_page_{page_number}_{page_size}',
+                find_movies=sorted_movies
+                )
+        return sorted_movies
 
     async def _get_sorted_movies_from_elastic(
             self,
             order: str,
-            sorted_field: str
-            ) -> Optional[List[str]]:
+            sorted_field: str,
+            page_number: int,
+            page_size: int
+            ) -> Optional[List[MovieShort]]:
         try:
-            sorted_id = []
-            body = sorted_movie_query(order, sorted_field)
+            sorted_movies = []
+            body = sorted_movie_query(
+                order,
+                sorted_field,
+                page_number,
+                page_size
+                )
             response = await self.elastic.search(
                 body=body,
                 index='movies',
@@ -145,41 +180,63 @@ class MovieService:
                     sorted_field)
             )
             docs = response['hits']['hits']
-            sorted_id = []
+            sorted_movies = []
             for doc in docs:
-                sorted_id.append(doc['_id'])
+                sorted_movies.append(MovieShort(
+                    uuid=doc['_source']['id'],
+                    imdb_rating=doc['_source']['imdb_rating'],
+                    title=doc['_source']['title']
+                    )
+                )
 
         except NotFoundError:
             return None
-        return sorted_id
+        return sorted_movies
 
     async def get_genres_sorted_movies(
             self,
             order: str,
             sorted_field: str,
+            page_number,
+            page_size,
             genre: uuid.UUID
-            ) -> Optional[List[Movie]]:
-        sorted_id = await self._ids_from_cache('index_genres_sorted')
-        if not sorted_id:
-            sorted_id = await self._get_genres_sorted_movies_from_elastic(
-                order,
-                sorted_field,
-                genre
-                )
-            if not sorted_id:
+            ) -> Optional[List[MovieShort]]:
+        genres_sorted_movies = await self._find_movies_from_cache(
+            key=f'{genre}_{page_number}_{page_size}'
+            )
+        if not genres_sorted_movies:
+            genres_sorted_movies = \
+                await self._get_genres_sorted_movies_from_elastic(
+                    order,
+                    sorted_field,
+                    page_number,
+                    page_size,
+                    genre
+                    )
+            if not genres_sorted_movies:
                 return None
-            await self._put_ids_to_cache('index_genres_sorted', sorted_id)
-        return sorted_id
+            await self._put_find_movies_to_cache(
+                key=f'{genre}_{page_number}_{page_size}',
+                find_movies=genres_sorted_movies
+                )
+        return genres_sorted_movies
 
     async def _get_genres_sorted_movies_from_elastic(
             self,
             order: str,
             sorted_field: str,
+            page_number: int,
+            page_size: int,
             genre: uuid.UUID
-            ) -> Optional[List[str]]:
+            ) -> Optional[List[MovieShort]]:
         try:
-            sorted_id = []
-            body = genre_sorted_movie_query(order, sorted_field, genre)
+            body = genre_sorted_movie_query(
+                order,
+                sorted_field,
+                page_number,
+                page_size,
+                genre
+                )
             response = await self.elastic.search(
                 body=body,
                 index='movies',
@@ -193,44 +250,50 @@ class MovieService:
                     genre)
             )
             docs = response['hits']['hits']
-            sorted_id = []
+            sorted_senres_movies = []
             for doc in docs:
-                sorted_id.append(doc['_id'])
+                sorted_senres_movies.append(MovieShort(
+                    uuid=doc['_source']['id'],
+                    imdb_rating=doc['_source']['imdb_rating'],
+                    title=doc['_source']['title']
+                    )
+                )
 
         except NotFoundError:
             return None
-        return sorted_id
+        return sorted_senres_movies
 
-    # забрать / получить список id из redis
-    async def _ids_from_cache(
+    # забрать / получить фильмы по запросу из redis
+    async def _find_movies_from_cache(
             self,
             key: str
             ) -> Optional[List[str]]:
-        data = await self.redis.get(key)
-        if not data:
+        values = await self.redis.get(key)
+        if not values:
             return None
-        data = orjson.loads(data)
-        logger.info('Movies list by {0} get data: {1} from redis'.format(
-            key,
-            data)
-        )
+        values = orjson.loads(values)
+        data = []
+        for movie in values:
+            data.append(MovieShort.parse_raw(movie))
+        logger.info('Movies by {0} get from redis'.format(key))
         return data
 
-    async def _put_ids_to_cache(
+    async def _put_find_movies_to_cache(
             self,
             key: str,
-            ids: Optional[List[str]]
+            find_movies: Optional[List[MovieShort]]
             ):
+        values = []
+        for movie in find_movies:
+            values.append(movie.json())
         await self.redis.set(
             key,
-            orjson_dumps(ids, default='default'),
+            orjson_dumps(values, default='default'),
             SORTED_MOVIES_CACHE_EXPIRE_IN_SECONDS
             )
         logger.info(
-            'Movies list by {0} with data: {1} \
-             put into redis for {2} seconds'.format(
+            'Movies by {0} put into redis for {1} seconds'.format(
                 key,
-                ids,
                 SORTED_MOVIES_CACHE_EXPIRE_IN_SECONDS
                 )
             )

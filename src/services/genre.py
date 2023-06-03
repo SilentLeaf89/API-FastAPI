@@ -12,7 +12,7 @@ from models.genre import Genre
 from models._orjson import orjson_dumps
 from core.get_logger import get_logger
 
-GENRE_CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
+GENRE_CACHE_EXPIRE_IN_SECONDS = 5 * 60  # 5 минут
 logger = get_logger()
 
 

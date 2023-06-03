@@ -1,11 +1,10 @@
 from http import HTTPStatus
-from typing import List
+from typing import Annotated, List
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from services.movie import MovieService, get_movie_service
-from services.paginator import Paginator
 from schemas.movie_short import MovieShort
 from schemas.movie_info import MovieInfo
 from services.sorting import sorting
@@ -46,33 +45,22 @@ async def movie_details(
             tags=['Фильмы', 'Поиск']
             )
 async def movie_search(
-    query: str,
-    movie_service: MovieService = Depends(get_movie_service),
-    page_number: int = 1,
-    page_size: int = 50
-     ) -> List[MovieShort]:
+        query: str,
+        movie_service: MovieService = Depends(get_movie_service),
+        page_number: Annotated[int, Query(1, ge=1, lt=200)] = 1,
+        page_size: Annotated[int, Query(50, ge=10, lt=100)] = 50
+        ) -> List[MovieShort]:
 
-    find_id = await movie_service.get_find_movies(query)
-    if not find_id:
+    find_movies = await movie_service.get_find_movies(
+        query,
+        page_number,
+        page_size
+        )
+    if not find_movies:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail='Movies not found, Sorry')
 
-    find_movies = []
-    for id in find_id:
-        movie = await movie_service.get_by_id(id)
-        find_movies.append(MovieShort(
-            uuid=movie.id,
-            imdb_rating=movie.imdb_rating,
-            title=movie.title
-            )
-            )
-
-    paginator = Paginator(
-        items=find_movies,
-        page_number=page_number,
-        page_size=page_size
-        )
-    return paginator.paginate()
+    return find_movies
 
 
 @router.get('/',
@@ -86,41 +74,29 @@ async def get_index(
         genre: uuid.UUID = None,
         movie_service: MovieService = Depends(get_movie_service),
         sort: str = "-imdb_rating",
-        page_number: int = 1,
-        page_size: int = 50
+        page_number: Annotated[int, Query(1, ge=1, lt=200)] = 1,
+        page_size: Annotated[int, Query(50, ge=10, lt=100)] = 50
         ) -> List[MovieShort]:
 
     order, sorted_field = sorting(sort)
     if genre:
-        sorted_id = await movie_service.get_genres_sorted_movies(
+        sorted_movies = await movie_service.get_genres_sorted_movies(
             order,
             sorted_field,
+            page_number,
+            page_size,
             genre
             )
     else:
-        sorted_id = await movie_service.get_sorted_movies(
+        sorted_movies = await movie_service.get_sorted_movies(
             order,
-            sorted_field
+            sorted_field,
+            page_number,
+            page_size,
             )
-    if not sorted_id:
+    if not sorted_movies:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='If you see this page: we are failed, sorry')
 
-    sorted_movies = []
-    for id in sorted_id:
-        movie = await movie_service.get_by_id(id)
-        sorted_movies.append(
-            MovieShort(
-                uuid=movie.id,
-                imdb_rating=movie.imdb_rating,
-                title=movie.title
-                )
-            )
-
-    paginator = Paginator(
-        items=sorted_movies,
-        page_number=page_number,
-        page_size=page_size
-        )
-    return paginator.paginate()
+    return sorted_movies

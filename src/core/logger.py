@@ -1,7 +1,9 @@
-from core.config import LOG_LOGGER_LEVEL, LOG_ROOT_LEVEL, LOG_HANDLERS_LEVEL
+from core.config import LogSettings
 
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 LOG_DEFAULT_HANDLERS = ['console', ]
+
+log_settings = LogSettings()
 
 LOGGING = {
     'version': 1,
@@ -23,7 +25,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': LOG_HANDLERS_LEVEL,
+            'level': log_settings.LOG_HANDLERS_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
@@ -41,19 +43,19 @@ LOGGING = {
     'loggers': {
         '': {
             'handlers': LOG_DEFAULT_HANDLERS,
-            'level': LOG_LOGGER_LEVEL,
+            'level': log_settings.LOG_LOGGER_LEVEL,
         },
         'uvicorn.error': {
-            'level': LOG_LOGGER_LEVEL,
+            'level': log_settings.LOG_LOGGER_LEVEL,
         },
         'uvicorn.access': {
             'handlers': ['access'],
-            'level': LOG_LOGGER_LEVEL,
+            'level': log_settings.LOG_LOGGER_LEVEL,
             'propagate': False,
         },
     },
     'root': {
-        'level': LOG_ROOT_LEVEL,
+        'level': log_settings.LOG_ROOT_LEVEL,
         'formatter': 'verbose',
         'handlers': LOG_DEFAULT_HANDLERS,
     },
