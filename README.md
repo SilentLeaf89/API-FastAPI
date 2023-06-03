@@ -11,9 +11,15 @@ https://github.com/SilentLeaf89/Async_API_sprint_1
 ![Схема](schema.png)
 
 Инструкция по запуску:
+  - подготовьте переменные окружения и раположите их в /env
   - запустите docker compose в Async_API_sprint_1
-    (переменные окружения отсутствуют)
-  - после запуска  guvicorn используйте хост и порт, полученный
-  из лога, например "[INFO] Listening at: http://172.29.0.4:8000"
   - перейдите по адресу swagger-а: http://<хост>:<порт>/api/openapi
-  - протестируйте доступное API и логгирование.
+  - протестируйте доступное API.
+  - основной сайт доступен через nginx по адресам:
+      http://127.0.0.1:80/api/v1/movies/?sort=-imdb_rating&page_number=1&page_size=50
+
+      http://127.0.0.1:80/api/v1/genres
+      
+      и т.д.
+
+  - очистить кэш Redis: docker exec -it redis-7.0 redis-cli FLUSHALL

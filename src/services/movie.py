@@ -171,7 +171,7 @@ class MovieService:
             response = await self.elastic.search(
                 body=body,
                 index='movies',
-                size=1000
+                size=page_size
                 )
             logger.info(
                 'Movies list with order {0} and sorted on {1} \
@@ -240,7 +240,7 @@ class MovieService:
             response = await self.elastic.search(
                 body=body,
                 index='movies',
-                size=1000
+                size=page_size
                 )
             logger.info(
                 'Movies list with order {0} and genre {2} \
