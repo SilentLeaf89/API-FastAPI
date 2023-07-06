@@ -1,4 +1,4 @@
-Базовый функционал для API кинотеатра.
+Базовый функционал для API кинотеатра: FastAPI, Elasticsearch, Redis, docker compose, nginx.
 
 
 Инструкция по запуску:
